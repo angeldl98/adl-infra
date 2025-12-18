@@ -274,7 +274,7 @@ services:
     container_name: core-auth
     restart: unless-stopped
     env_file:
-      - data/secrets/runtime.env
+      - /opt/adl-suite/data/secrets/runtime.env
     environment:
       POSTGRES_HOST: postgres
       POSTGRES_PORT: 5432
