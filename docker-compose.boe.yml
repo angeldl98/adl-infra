@@ -1,0 +1,135 @@
+networks:
+  adl-net:
+    driver: bridge
+
+volumes:
+  pgdata:
+  logs-data:
+
+services:
+  postgres:
+    image: postgres:15
+    container_name: adl-postgres
+    env_file:
+      - /opt/adl-suite/data/secrets/runtime.env
+    environment:
+      POSTGRES_USER: adl
+      POSTGRES_DB: adl_core
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "0.0.0.0:5432:5432"
+    networks:
+      - adl-net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U adl"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    mem_limit: 1g
+    cpus: 1.0
+
+  adl-gateway:
+    build:
+      context: ../adl-gateway
+      dockerfile: Dockerfile
+    container_name: adl-gateway
+    env_file:
+      - /opt/adl-suite/data/secrets/runtime.env
+    environment:
+      PORT: 4000
+      SECRETS_URL: http://core-secrets:4202
+      GATEWAY_POLICY_ENFORCE: ${GATEWAY_POLICY_ENFORCE:-1}
+      GATEWAY_POLICY_ALLOW_ON_FAILURE: ${GATEWAY_POLICY_ALLOW_ON_FAILURE:-1}
+      REDIS_PASSWORD_FILE: /opt/adl-suite/data/secrets/redis.password
+    networks:
+      - adl-net
+    ports:
+      - "4000:4000"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"fetch('http://localhost:4000/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\""]
+      interval: 10s
+      timeout: 5s
+    retries: 5
+    mem_limit: 256m
+    cpus: 0.5
+    volumes:
+      - logs-data:/opt/adl-suite/logs
+
+  engine-scraper:
+    build:
+      context: ../engines/scraper
+      dockerfile: Dockerfile
+    container_name: engine-scraper
+    env_file:
+      - .env
+      - /opt/adl-suite/data/secrets/runtime.env
+    environment:
+      PORT: 4103
+      NODE_ENV: production
+      PUPPETEER_EXECUTABLE_PATH: /usr/bin/chromium
+      PLAYWRIGHT_BROWSERS_PATH: /ms-playwright
+      PRISMA_SCHEMA_PATH: /app/prisma/schema.prisma
+      ADL_API_DOMAIN: api.adlsuite.com
+      ADL_DASHBOARD_DOMAIN: dashboard.adlsuite.com
+      NEXT_PUBLIC_API_URL: https://api.adlsuite.com
+      BOE_SUBASTAS_USERNAME: ${BOE_SUBASTAS_USERNAME}
+      BOE_SUBASTAS_PASSWORD: ${BOE_SUBASTAS_PASSWORD}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4o}
+      REDIS_PASSWORD_FILE: /opt/adl-suite/data/secrets/redis.password
+      POSTGRES_PASSWORD_FILE: /opt/adl-suite/data/secrets/postgres.password
+      GATEWAY_API_KEY_FILE: /opt/adl-suite/data/secrets/gateway.api_key
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
+    networks:
+      - adl-net
+    volumes:
+      - logs-data:/opt/adl-suite/logs
+      - /opt/adl-suite/data/sessions:/data/sessions
+      - /opt/adl-suite/data:/opt/adl-suite/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"fetch('http://localhost:4103/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\""]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    mem_limit: 200m
+    cpus: 0.4
+
+  adl-web:
+    build:
+      context: ../adl-web
+      dockerfile: Dockerfile
+    container_name: adl-web
+    env_file:
+      - /opt/adl-suite/data/secrets/runtime.env
+    environment:
+      PORT: 3000
+      NEXT_PUBLIC_API_URL: https://api.adlsuite.com
+      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:-change-this-in-production}
+      NEXTAUTH_URL: ${NEXTAUTH_URL:-https://adlsuite.com}
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: adl
+      # POSTGRES_PASSWORD loaded from env_file (runtime.env)
+      POSTGRES_DB: adl_core
+      PREMIUM_EMAILS: ${PREMIUM_EMAILS:-angel.diaz.lopez98@gmail.com}
+    networks:
+      - adl-net
+    depends_on:
+      adl-gateway:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"fetch('http://localhost:3000/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\""]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    mem_limit: 256m
+    cpus: 0.5
+    volumes:
+      - logs-data:/opt/adl-suite/logs
+
