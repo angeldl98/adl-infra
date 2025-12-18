@@ -80,7 +80,7 @@ services:
       - "4000:4000"
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "node -e \"fetch(\'http://localhost:4210/health\').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\""]
+      test: ["CMD-SHELL", "node -e \"fetch('http://localhost:4000/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\""]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -261,6 +261,11 @@ services:
       - /opt/adl-suite/data/sessions:/data/sessions
       - /opt/adl-suite/data:/opt/adl-suite/data
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"fetch('http://localhost:4103/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\""]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     healthcheck:
       test: ["CMD-SHELL", "node -e \"fetch('http://localhost:4103/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\""]
       interval: 10s

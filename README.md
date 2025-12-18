@@ -2,11 +2,24 @@
 
 Infra oficial (única fuente) para despliegue en docker-compose.
 
-Servicios clave:
-- `adl-gateway` expuesto en host: `4000:4000`. Endpoint oficial de ingesta: `POST http://localhost:4000/api/subastas/sync`.
-- Resto de servicios se comunican en la red interna `adl-net`.
+Un solo compose, un solo endpoint:
+- Compose: este repo `adl-infra/docker-compose.yml`.
+- Endpoint oficial: `POST http://localhost:4000/api/subastas/sync` (gateway).
 
-Notas:
-- No se incluyen secretos. Variables en `data/secrets/runtime.env` se montan fuera del repo.
-- No se exponen otros puertos adicionales en esta versión mínima.
+Bootstrap (no arranca nada):
+1) Ejecutar `./bootstrap.sh`:
+   - Verifica que `/opt/adl-suite/data/secrets/runtime.env` exista (no se guarda en git).
+   - Crea `.env` vacío con comentarios si falta y asegura que esté ignorado.
+   - Imprime el endpoint oficial.
+
+Arranque del stack:
+- Tras bootstrap, ejecutar `docker compose up -d` desde este repo.
+- Sin cron, sin rutas legacy. Solo este compose.
+
+Ingesta única (cuando se autorice):
+- `POST http://localhost:4000/api/subastas/sync` con `x-api-key` adecuado (en runtime.env).
+- Sin proxies, sin PDFs, sin paralelismo.
+
+Secretos:
+- No se incluyen en git. Usar `/opt/adl-suite/data/secrets/runtime.env`.
 
