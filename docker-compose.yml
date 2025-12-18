@@ -272,7 +272,9 @@ services:
     cpus: 0.4
 
   core-auth:
-    image: adl-suite-core-auth
+    build:
+      context: ../core-auth
+      dockerfile: Dockerfile
     container_name: core-auth
     restart: unless-stopped
     env_file:
@@ -286,8 +288,6 @@ services:
       ADMIN_PASSWORD: Temp#Adm1n-2025!
     depends_on:
       - postgres
-    ports:
-      - "4205:4205"
     networks:
       - adl-net
 
@@ -295,8 +295,8 @@ services:
 
   core-policy:
     build:
-      context: .
-      dockerfile: core/core-policy/Dockerfile
+      context: ../core/core-policy
+      dockerfile: Dockerfile
     container_name: core-policy
     environment:
       PORT: 4210
