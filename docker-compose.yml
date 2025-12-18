@@ -52,8 +52,8 @@ services:
 
   adl-gateway:
     build:
-      context: .
-      dockerfile: adl-gateway/Dockerfile
+      context: ../adl-gateway
+      dockerfile: Dockerfile
     container_name: adl-gateway
     env_file:
       - /opt/adl-suite/data/secrets/runtime.env
@@ -92,8 +92,8 @@ services:
 
   adl-brain:
     build:
-      context: .
-      dockerfile: adl-brain/Dockerfile
+      context: ../adl-brain
+      dockerfile: Dockerfile
     container_name: adl-brain
     environment:
       PORT: 4001
@@ -119,8 +119,8 @@ services:
 
   adl-executor:
     build:
-      context: .
-      dockerfile: adl-executor/Dockerfile
+      context: ../adl-executor
+      dockerfile: Dockerfile
     container_name: adl-executor
     environment:
       PORT: 4002
@@ -146,8 +146,8 @@ services:
 
   adl-monitor:
     build:
-      context: .
-      dockerfile: adl-monitor/Dockerfile
+      context: ../adl-monitor
+      dockerfile: Dockerfile
     container_name: adl-monitor
     environment:
       PORT: 4003
@@ -170,8 +170,8 @@ services:
 
   adl-knowledge:
     build:
-      context: .
-      dockerfile: adl-knowledge/Dockerfile
+      context: ../adl-knowledge
+      dockerfile: Dockerfile
     container_name: adl-knowledge
     env_file:
       - /opt/adl-suite/data/secrets/runtime.env
@@ -196,7 +196,7 @@ services:
 
   adl-web:
     build:
-      context: ./adl-web
+      context: ../adl-web
       dockerfile: Dockerfile
     container_name: adl-web
     env_file:
@@ -231,7 +231,9 @@ services:
 
 
   engine-scraper:
-    image: adl-suite-engine-scraper
+    build:
+      context: ../engines/scraper
+      dockerfile: Dockerfile
     container_name: engine-scraper
     env_file:
       - .env
