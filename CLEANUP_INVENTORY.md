@@ -28,9 +28,10 @@ Fecha: 2025-12-21
 - pharma-runner.timer (activo, cada 6h)
 - boe-runner.service / pharma-runner.service asociados.
 
-### Elementos fuera de la lista de repos activos declarados (adl-scraper, adl-api, adl-panel, adl-brain, adl-trading, adl-solvencia, adl-infra)
+### Elementos fuera de la lista de repos activos declarados (adl-scraper, adl-api, adl-brain, adl-trading, adl-solvencia, adl-infra)
 - Presentes pero no movidos (SAFE MODE, sin impacto operativo): adl-boe-raw-scraper, adl-boe-normalizer, adl-df-pharma-raw, adl-df-pharma-normalizer, adl-data-analyst, adl-gateway (API actual), adl-web (web actual), engines/* y core/* (activos).
 - Motivo de no mover: requeridos por pipelines BOE/Pharma en producción actual y/o servicios en ejecución; instrucción explícita de no tocar BOE ingestión y operar en modo no destructivo.
+- adl-panel: no presente y sin uso; decisión final de no emplearlo.
 
 ### Pendientes de congelar en _graveyard/UNTRACKED_YYYYMMDD (no ejecutado)
 - Todos los repos/folders no listados como activos oficiales (ver sección anterior) deberían moverse en fase aprobada futura, con reemplazo operativo definido (adl-scraper/adl-api/adl-panel).

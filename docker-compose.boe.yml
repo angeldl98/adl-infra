@@ -89,7 +89,6 @@ services:
       - logs-data:/opt/adl-suite/logs
       - /opt/adl-suite/data/sessions:/data/sessions
       - /opt/adl-suite/data:/opt/adl-suite/data
-    command: ["node", "dist/foundation/boe-listing-main.js"]
     restart: "no"
     healthcheck:
       test: ["CMD-SHELL", "node -e \"fetch('http://localhost:4103/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\""]
@@ -107,7 +106,8 @@ services:
       - /opt/adl-suite/data/secrets/runtime.env
     environment:
       PORT: 3000
-      NEXT_PUBLIC_API_URL: https://api.adlsuite.com
+      NEXT_PUBLIC_API_BASE_URL: https://api.adlsuite.com
+      APP_NAME: adl-web
       NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:-change-this-in-production}
       NEXTAUTH_URL: ${NEXTAUTH_URL:-https://adlsuite.com}
       POSTGRES_HOST: postgres
