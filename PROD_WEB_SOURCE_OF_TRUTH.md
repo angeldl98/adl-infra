@@ -11,6 +11,11 @@ Fecha: 2025-12-21
   - Imagen: `adl-infra-adl-web`
   - Puerto interno: 3000
   - Fuente git usada para la imagen: repo `adl-web` (Dockerfile en `adl-web/`, build → dist)
+- Evidencias runtime:
+  - Caddy en contenedor `adl-caddy`: `reverse_proxy adl-web:3000` (ver `/etc/caddy/Caddyfile`).
+  - `docker ps --filter name=adl-web --format 'CONTAINER={{.Names}} IMAGE={{.Image}} PORTS={{.Ports}} STATUS={{.Status}}'`  
+    → `CONTAINER=adl-web IMAGE=adl-infra-adl-web PORTS=3000/tcp STATUS=Up ...`
+  - `docker inspect adl-web` → `IMAGE=adl-infra-adl-web NAME=/adl-web ... compose.service=adl-web`.
 - Contenedor API activo: `adl-gateway`
   - Imagen: `adl-suite-adl-gateway`
   - Puerto interno: 4000
