@@ -62,6 +62,9 @@ services:
       SECRETS_URL: http://core-secrets:4202
       GATEWAY_POLICY_ENFORCE: ${GATEWAY_POLICY_ENFORCE:-1}
       GATEWAY_POLICY_ALLOW_ON_FAILURE: ${GATEWAY_POLICY_ALLOW_ON_FAILURE:-1}
+      POSTGRES_HOST: postgres
+      POSTGRES_DB: adl_core
+      DATABASE_URL: postgres://adl:${POSTGRES_PASSWORD:-60DBhWsncNzkTpTb8L8oEBNBtmOCCZwh}@postgres:5432/adl_core
       REDIS_PASSWORD_FILE: /opt/adl-suite/data/secrets/redis.password
     depends_on:
       adl-brain:
@@ -211,6 +214,7 @@ services:
       POSTGRES_USER: adl
       # POSTGRES_PASSWORD loaded from env_file (runtime.env)
       POSTGRES_DB: adl_core
+      DATABASE_URL: postgres://adl:${POSTGRES_PASSWORD:-60DBhWsncNzkTpTb8L8oEBNBtmOCCZwh}@postgres:5432/adl_core
       PREMIUM_EMAILS: ${PREMIUM_EMAILS:-angel.diaz.lopez98@gmail.com}
     networks:
       - adl-net
