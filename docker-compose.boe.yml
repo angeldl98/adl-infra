@@ -56,47 +56,6 @@ services:
     volumes:
       - logs-data:/opt/adl-suite/logs
 
-  engine-scraper:
-    command: ["node", "dist/foundation/boe-listing-main.js"]
-    build:
-      context: ../engines/scraper
-      dockerfile: Dockerfile
-    container_name: engine-scraper
-    env_file:
-      - .env
-      - /opt/adl-suite/data/secrets/runtime.env
-    environment:
-      PORT: 4103
-      NODE_ENV: production
-      PUPPETEER_EXECUTABLE_PATH: /usr/bin/chromium
-      PLAYWRIGHT_BROWSERS_PATH: /ms-playwright
-      PRISMA_SCHEMA_PATH: /app/prisma/schema.prisma
-      ADL_API_DOMAIN: api.adlsuite.com
-      ADL_DASHBOARD_DOMAIN: dashboard.adlsuite.com
-      NEXT_PUBLIC_API_URL: https://api.adlsuite.com
-      BOE_SUBASTAS_USERNAME: ${BOE_SUBASTAS_USERNAME}
-      BOE_SUBASTAS_PASSWORD: ${BOE_SUBASTAS_PASSWORD}
-      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
-      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4o}
-      REDIS_PASSWORD_FILE: /opt/adl-suite/data/secrets/redis.password
-      POSTGRES_PASSWORD_FILE: /opt/adl-suite/data/secrets/postgres.password
-      GATEWAY_API_KEY_FILE: /opt/adl-suite/data/secrets/gateway.api_key
-      ADMIN_EMAIL: ${ADMIN_EMAIL:-}
-      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
-    networks:
-      - adl-net
-    volumes:
-      - logs-data:/opt/adl-suite/logs
-      - /opt/adl-suite/data/sessions:/data/sessions
-      - /opt/adl-suite/data:/opt/adl-suite/data
-    restart: "no"
-    healthcheck:
-      test: ["CMD-SHELL", "node -e \"fetch('http://localhost:4103/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\""]
-      interval: 10s
-      timeout: 5s
-    mem_limit: 200m
-    cpus: 0.4
-
   adl-web:
     build:
       context: ../adl-web
