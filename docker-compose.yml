@@ -10,6 +10,23 @@ volumes:
   caddy_config:
 
 services:
+  caddy:
+    image: caddy:2.8
+    container_name: adl-caddy
+    restart: unless-stopped
+    ports:
+      - "0.0.0.0:80:80"
+      - "0.0.0.0:443:443"
+    volumes:
+      - ../Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      - adl-net
+    depends_on:
+      - adl-web
+      - adl-gateway
+
   postgres:
     image: postgres:15
     container_name: adl-postgres
