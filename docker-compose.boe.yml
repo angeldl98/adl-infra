@@ -31,8 +31,8 @@ services:
 
   adl-gateway:
     build:
-      context: ../adl-gateway
-      dockerfile: Dockerfile
+      context: ..
+      dockerfile: adl-gateway/Dockerfile
     container_name: adl-gateway
     env_file:
       - /opt/adl-suite/data/secrets/runtime.env

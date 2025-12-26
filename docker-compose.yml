@@ -52,8 +52,8 @@ services:
 
   adl-gateway:
     build:
-      context: ../adl-gateway
-      dockerfile: Dockerfile
+      context: ..
+      dockerfile: adl-gateway/Dockerfile
     container_name: adl-gateway
     env_file:
       - /opt/adl-suite/data/secrets/runtime.env
@@ -95,8 +95,8 @@ services:
 
   adl-brain:
     build:
-      context: ../adl-brain
-      dockerfile: Dockerfile
+      context: ..
+      dockerfile: adl-brain/Dockerfile
     container_name: adl-brain
     environment:
       PORT: 4001
@@ -122,8 +122,8 @@ services:
 
   adl-executor:
     build:
-      context: ../adl-executor
-      dockerfile: Dockerfile
+      context: ..
+      dockerfile: adl-executor/Dockerfile
     container_name: adl-executor
     environment:
       PORT: 4002
@@ -149,8 +149,8 @@ services:
 
   adl-monitor:
     build:
-      context: ../adl-monitor
-      dockerfile: Dockerfile
+      context: ..
+      dockerfile: adl-monitor/Dockerfile
     container_name: adl-monitor
     environment:
       PORT: 4003
@@ -173,8 +173,8 @@ services:
 
   adl-knowledge:
     build:
-      context: ../adl-knowledge
-      dockerfile: Dockerfile
+      context: ..
+      dockerfile: adl-knowledge/Dockerfile
     container_name: adl-knowledge
     env_file:
       - /opt/adl-suite/data/secrets/runtime.env
@@ -236,8 +236,8 @@ services:
 
   core-auth:
     build:
-      context: ../core-auth
-      dockerfile: Dockerfile
+      context: ..
+      dockerfile: core-auth/Dockerfile
     container_name: core-auth
     restart: unless-stopped
     env_file:
@@ -258,8 +258,8 @@ services:
 
   core-policy:
     build:
-      context: ../core/core-policy
-      dockerfile: Dockerfile
+      context: ..
+      dockerfile: core/core-policy/Dockerfile
     container_name: core-policy
     environment:
       PORT: 4210
