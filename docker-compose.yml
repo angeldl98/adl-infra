@@ -94,6 +94,11 @@ services:
       - /opt/adl-suite/data/secrets/runtime.env
     environment:
       DOCKER_ENV: "1"
+      PGHOST: postgres
+      PGUSER: adl
+      PGDATABASE: adl_core
+      PGPASSWORD: "${POSTGRES_PASSWORD}"
+      PGPORT: 5432
     command: ["bash", "-lc", "while true; do /opt/adl-suite/adl-infra/scripts/pharma-runner.sh; sleep 43200; done"]
     depends_on:
       - postgres
