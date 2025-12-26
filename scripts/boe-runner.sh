@@ -32,7 +32,7 @@ if ! command -v python3 >/dev/null 2>&1; then
   }
 fi
 
-python3 - <<'PY' >/dev/null 2>&1 || {
+if ! python3 - <<'PY' >/dev/null 2>&1; then
 import importlib
 import sys
 for mod in ("pandas", "great_expectations"):
@@ -41,8 +41,7 @@ for mod in ("pandas", "great_expectations"):
     except ImportError:
         sys.exit(1)
 sys.exit(0)
-}
-if [ $? -ne 0 ]; then
+PY
   pip3 install --no-cache-dir pandas great_expectations >/dev/null 2>&1 || {
     echo "[$(date --iso-8601=seconds)] RUN_FAIL great_expectations install failed"
     exit 1
