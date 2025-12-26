@@ -24,20 +24,26 @@ if ! command -v psql >/dev/null 2>&1; then
   }
 fi
 
-# Ensure Python + Great Expectations for analyst quality gate
-if ! command -v python3 >/dev/null 2>&1; then
-  apt-get update >/dev/null 2>&1 && apt-get install -y python3 python3-pip >/dev/null 2>&1 || {
+# Ensure Python + Great Expectations for analyst quality gate (isolated venv)
+GE_VENV="/opt/adl-suite/data/venv/ge"
+if [ ! -x "${GE_VENV}/bin/python3" ]; then
+  apt-get update >/dev/null 2>&1 && apt-get install -y python3 python3-venv python3-pip >/dev/null 2>&1 || {
     echo "[$(date --iso-8601=seconds)] RUN_FAIL python3 install failed"
+    exit 1
+  }
+  python3 -m venv "${GE_VENV}" || {
+    echo "[$(date --iso-8601=seconds)] RUN_FAIL venv creation failed"
     exit 1
   }
 fi
 
-if ! python3 -c "import importlib, sys; [importlib.import_module(m) for m in ('pandas','great_expectations')]" >/dev/null 2>&1; then
-  pip3 install --no-cache-dir pandas great_expectations || {
+if ! "${GE_VENV}/bin/python3" -c "import importlib, sys; [importlib.import_module(m) for m in ('pandas','great_expectations')]" >/dev/null 2>&1; then
+  "${GE_VENV}/bin/pip" install --no-cache-dir pandas great_expectations || {
     echo "[$(date --iso-8601=seconds)] RUN_FAIL great_expectations install failed"
     exit 1
   }
 fi
+export GE_PYTHON="${GE_VENV}/bin/python3"
 
 psql_q() {
   PGPASSWORD="${POSTGRES_PASSWORD:-}" psql -h "${POSTGRES_HOST:-postgres}" -U "${POSTGRES_USER:-adl}" -d "${POSTGRES_DB:-adl_core}" -Atc "$1"
