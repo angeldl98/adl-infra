@@ -33,7 +33,7 @@ if ! command -v python3 >/dev/null 2>&1; then
 fi
 
 if ! python3 -c "import importlib, sys; [importlib.import_module(m) for m in ('pandas','great_expectations')]" >/dev/null 2>&1; then
-  pip3 install --no-cache-dir pandas great_expectations >/dev/null 2>&1 || {
+  pip3 install --no-cache-dir pandas great_expectations || {
     echo "[$(date --iso-8601=seconds)] RUN_FAIL great_expectations install failed"
     exit 1
   }
