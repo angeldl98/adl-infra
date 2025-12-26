@@ -36,7 +36,7 @@ run_step_with_ci() {
 }
 
 # BOE RAW scraper (headless cron scrape)
-run_step_with_ci "raw_scraper" "/opt/adl-suite/adl-boe-raw-scraper" npm run scrape:cron
+run_step_with_ci "raw_scraper" "/opt/adl-suite/adl-boe-raw-scraper" bash -lc "npx playwright install --with-deps chromium && npm run scrape:cron"
 
 # BOE normalizer (build + run)
 run_step_with_ci "normalizer" "/opt/adl-suite/adl-boe-normalizer" bash -lc "npm run build && npm start"
