@@ -20,7 +20,7 @@ log "STEP_START pharma_analyst"
 cd /opt/adl-suite/adl-data-analyst
 npm ci --quiet
 npm run build --silent
-node dist/index.js --plugin pharma
+npm start -- --plugin pharma
 log "STEP_OK pharma_analyst"
 
 log "RUN_OK pharma-runner"
