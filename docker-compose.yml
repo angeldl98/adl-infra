@@ -50,6 +50,23 @@ services:
     mem_limit: 256m
     cpus: 0.5
 
+  boe-runner:
+    image: node:20-slim
+    container_name: boe-runner
+    working_dir: /opt/adl-suite
+    volumes:
+      - ..:/opt/adl-suite
+    env_file:
+      - /opt/adl-suite/data/secrets/runtime.env
+    environment:
+      DOCKER_ENV: "1"
+    command: ["bash", "-lc", "while true; do /opt/adl-suite/adl-infra/scripts/boe-runner.sh; sleep 1800; done"]
+    depends_on:
+      - postgres
+    networks:
+      - adl-net
+    restart: unless-stopped
+
   adl-gateway:
     build:
       context: ..

@@ -9,7 +9,7 @@ mkdir -p "${LOCK_DIR}"
 mkdir -p "$(dirname "${LOG_FILE}")"
 
 exec >>"${LOG_FILE}" 2>&1
-echo "[$(date --iso-8601=seconds)] boe-runner start"
+echo "[$(date --iso-8601=seconds)] RUN_START boe-runner"
 
 if ! command -v flock >/dev/null 2>&1; then
   echo "flock not found; cannot ensure single execution"
@@ -17,25 +17,36 @@ if ! command -v flock >/dev/null 2>&1; then
 fi
 
 flock -n "${LOCK_FILE}" bash -c '
-  set -euo pipefail
+set -euo pipefail
 
-  run_step() {
-    local name="$1"
-    shift
-    echo "[$(date --iso-8601=seconds)] step ${name} start"
-    (cd "$1" && shift && "$@")
-    echo "[$(date --iso-8601=seconds)] step ${name} end"
-  }
+run_step() {
+  local name="$1"
+  shift
+  echo "[$(date --iso-8601=seconds)] STEP_START ${name}"
+  (cd "$1" && shift && "$@")
+  echo "[$(date --iso-8601=seconds)] STEP_OK ${name}"
+}
 
-  # BOE RAW scraper (includes controlled PDF fetch step inside npm start)
-  run_step "raw+pdf" "/opt/adl-suite/adl-boe-raw-scraper" /usr/bin/env PATH="/usr/local/bin:/usr/bin:/bin" npm start
+run_step_with_ci() {
+  local name="$1"
+  local dir="$2"
+  shift 2
+  run_step "${name}:npm-ci" "${dir}" npm ci
+  run_step "${name}:run" "${dir}" "$@"
+}
 
-  # BOE normalizer
-  run_step "normalizer" "/opt/adl-suite/adl-boe-normalizer" /usr/bin/env PATH="/usr/local/bin:/usr/bin:/bin" npm start
+# BOE RAW scraper (headless cron scrape)
+run_step_with_ci "raw_scraper" "/opt/adl-suite/adl-boe-raw-scraper" npm run scrape:cron
+
+# BOE normalizer (build + run)
+run_step_with_ci "normalizer" "/opt/adl-suite/adl-boe-normalizer" bash -lc "npm run build && npm start"
+
+# BOE analyst publish (build + run plugin=boe)
+run_step_with_ci "analyst_boe" "/opt/adl-suite/adl-data-analyst" bash -lc "npm run build && node dist/src/index.js --plugin=boe"
 ' || {
-  echo "[$(date --iso-8601=seconds)] boe-runner lock busy or failed"
+  echo "[$(date --iso-8601=seconds)] RUN_FAIL boe-runner lock busy or failed"
   exit 1
 }
 
-echo "[$(date --iso-8601=seconds)] boe-runner end"
+echo "[$(date --iso-8601=seconds)] RUN_OK boe-runner"
 
