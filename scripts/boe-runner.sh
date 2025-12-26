@@ -45,12 +45,12 @@ if ! "${GE_VENV}/bin/python3" -c "import importlib, sys; [importlib.import_modul
 fi
 export GE_PYTHON="${GE_VENV}/bin/python3"
 
+flock -n "${LOCK_FILE}" bash -c '
+set -euo pipefail
+
 psql_q() {
   PGPASSWORD="${POSTGRES_PASSWORD:-}" psql -h "${POSTGRES_HOST:-postgres}" -U "${POSTGRES_USER:-adl}" -d "${POSTGRES_DB:-adl_core}" -Atc "$1"
 }
-
-flock -n "${LOCK_FILE}" bash -c '
-set -euo pipefail
 
 log_fail() {
   echo "[$(date --iso-8601=seconds)] RUN_FAIL $1"
