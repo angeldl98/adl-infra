@@ -106,6 +106,24 @@ services:
       - adl-net
     restart: unless-stopped
 
+  boe-reports-runner:
+    image: node:20-slim
+    container_name: boe-reports-runner
+    working_dir: /opt/adl-suite
+    volumes:
+      - ..:/opt/adl-suite
+      - /opt/adl-suite/data/reports:/opt/adl-suite/data/reports
+    env_file:
+      - /opt/adl-suite/data/secrets/runtime.env
+    environment:
+      DOCKER_ENV: "1"
+    command: ["bash", "-lc", "/opt/adl-suite/adl-infra/scripts/boe-reports-runner.sh"]
+    depends_on:
+      - postgres
+    networks:
+      - adl-net
+    restart: unless-stopped
+
   adl-gateway:
     build:
       context: ..
