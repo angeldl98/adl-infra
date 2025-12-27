@@ -99,7 +99,7 @@ services:
       PGDATABASE: adl_core
       PGPASSWORD: "${POSTGRES_PASSWORD}"
       PGPORT: 5432
-    command: ["bash", "-lc", "while true; do /opt/adl-suite/adl-infra/scripts/pharma-runner.sh; sleep 43200; done"]
+    command: ["bash", "-lc", "while true; do /opt/adl-suite/adl-infra/scripts/pharma-runner.sh; sleep 86400; done"]
     depends_on:
       - postgres
     networks:
