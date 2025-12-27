@@ -33,3 +33,10 @@ Próximos pasos (según plan):
 - Añadir /api/session/issue + cookie HMAC y exigirla en endpoints de valor (ej. procurement list).
 - Documentar reglas Cloudflare/WAF cuando se apliquen.
 
+Actualización 2025-12-27:
+- Gateway ahora aplica rate limiting diferenciada (general/heavy) con Redis o memoria, logs RATE_LIMIT_HIT.
+- Endpoints list (boe/pharma/subastas) imponen page/pageSize max 50; 400 si excede; devuelven meta y ETag + Cache-Control s-maxage=60.
+- /api/session/issue (gateway) y middleware en adl-web generan cookie HMAC `adl_session` (TTL 12h).
+- Telemetría básica por minuto en gateway: top paths/UA/status en logs TRAFFIC_MINUTE.
+- Pendiente: reglas Cloudflare (Bot Fight / WAF / UA vacíos) documentar cuando se desplieguen; aplicar sesión requerida en endpoints de alto valor (procurement cuando se publique).
+
