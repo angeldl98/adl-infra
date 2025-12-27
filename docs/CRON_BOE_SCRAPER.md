@@ -12,7 +12,7 @@ Programación
 Comando (cron)
 --------------
 ```
-cd /opt/adl-suite && BOE_PDF_DAILY_BUDGET=10 BOE_PDF_MAX_DAYS_AHEAD=45 BOE_PDF_ONLY_ACTIVE=true BOE_PDF_ONLY_INMUEBLE=true BOE_PDF_DRY_RUN=false /usr/bin/docker compose run --rm boe-runner >> /opt/adl-suite/logs/boe-scraper.log 2>&1
+cd /opt/adl-suite && BOE_PDF_DAILY_BUDGET=10 BOE_PDF_MAX_DAYS_AHEAD=45 BOE_PDF_ONLY_ACTIVE=true BOE_PDF_ONLY_INMUEBLE=true BOE_PDF_DRY_RUN=false /usr/bin/docker compose run --rm boe-runner >> /opt/adl-suite/logs/boe-runner.log 2>&1
 ```
 
 Instalación
@@ -24,7 +24,7 @@ Crea `/etc/cron.d/adl-boe-scraper`.
 
 Logs
 ----
-- `/opt/adl-suite/logs/boe-scraper.log` (cada ejecución añade timestamp de cron).
+- `/opt/adl-suite/logs/boe-runner.log` (la salida del runner ya escribe ahí; el cron redirige al mismo).
 
 Política de PDFs (resumen)
 --------------------------
