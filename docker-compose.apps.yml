@@ -1,0 +1,236 @@
+# APPLICATION STACK
+# This file is only started when repos are present and clean.
+
+name: adl-infra-apps
+
+networks:
+  adl-net:
+    external: true
+    name: adl-infra_adl-net
+
+volumes:
+  logs-data:
+    external: true
+    name: adl-infra_logs-data
+  pgdata:
+    external: true
+    name: adl-infra_pgdata
+  secrets-data:
+    external: true
+    name: adl-infra_secrets-data
+
+services:
+  adl-gateway:
+    build:
+      context: ..
+      dockerfile: adl-gateway/Dockerfile
+    container_name: adl-gateway
+    env_file:
+      - /opt/adl-suite/data/secrets/runtime.env
+    environment:
+      PORT: 4000
+      SECRETS_URL: http://core-secrets:4202
+      GATEWAY_POLICY_ENFORCE: ${GATEWAY_POLICY_ENFORCE:-1}
+      GATEWAY_POLICY_ALLOW_ON_FAILURE: ${GATEWAY_POLICY_ALLOW_ON_FAILURE:-1}
+      POSTGRES_HOST: postgres
+      POSTGRES_DB: adl_core
+      DATABASE_URL: postgres://adl:${POSTGRES_PASSWORD:-60DBhWsncNzkTpTb8L8oEBNBtmOCCZwh}@postgres:5432/adl_core
+      REDIS_PASSWORD_FILE: /opt/adl-suite/data/secrets/redis.password
+    networks:
+      - adl-net
+    ports:
+      - "4000:4000"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"fetch('http://localhost:4000/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\""]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    mem_limit: 256m
+    cpus: 0.5
+    volumes:
+      - logs-data:/opt/adl-suite/logs
+      - secrets-data:/opt/adl-suite/data/secrets
+
+  adl-web:
+    build:
+      context: ../adl-web
+      dockerfile: Dockerfile
+    container_name: adl-web
+    env_file:
+      - /opt/adl-suite/data/secrets/runtime.env
+    environment:
+      PORT: 3000
+      NEXT_PUBLIC_API_URL: https://api.adlsuite.com
+      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:-change-this-in-production}
+      NEXTAUTH_URL: ${NEXTAUTH_URL:-https://adlsuite.com}
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: adl
+      POSTGRES_DB: adl_core
+      DATABASE_URL: postgres://adl:${POSTGRES_PASSWORD:-60DBhWsncNzkTpTb8L8oEBNBtmOCCZwh}@postgres:5432/adl_core
+      PREMIUM_EMAILS: ${PREMIUM_EMAILS:-angel.diaz.lopez98@gmail.com}
+    networks:
+      - adl-net
+    depends_on:
+      adl-gateway:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"fetch('http://localhost:3000/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\""]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    mem_limit: 256m
+    cpus: 0.5
+    volumes:
+      - logs-data:/opt/adl-suite/logs
+
+  core-eventbus:
+    build:
+      context: .
+      dockerfile: core/core-eventbus/Dockerfile
+    container_name: core-eventbus
+    env_file:
+      - ./data/secrets/runtime.env
+    environment:
+      PORT: 4212
+      MODE: http
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - adl-net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"fetch('http://localhost:4212/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\""]
+      interval: 10s
+    volumes:
+      - logs-data:/opt/adl-suite/logs
+
+  engine-trading:
+    build:
+      context: .
+    dockerfile: engines/trading/Dockerfile
+    container_name: engine-trading
+    env_file:
+      - ./data/secrets/runtime.env
+    environment:
+      PORT: 4101
+      EVENTBUS_URL: http://core-eventbus:4212
+      MODE: http
+    depends_on:
+      postgres:
+        condition: service_healthy
+      core-eventbus:
+        condition: service_healthy
+    networks:
+      - adl-net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"fetch('http://localhost:4101/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\""]
+      interval: 10s
+    volumes:
+      - logs-data:/opt/adl-suite/logs
+    ports:
+      - "4101:4101"
+
+  broker-alpaca:
+    build:
+      context: .
+      dockerfile: engines/broker-alpaca/Dockerfile
+    container_name: broker-alpaca
+    env_file:
+      - ./data/secrets/runtime.env
+    environment:
+      - PORT=4316
+      - EVENTBUS_URL=http://core-eventbus:4212
+      - MODE=http
+    depends_on:
+      core-eventbus:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    networks:
+      - adl-net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"fetch('http://localhost:4316/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\""]
+      interval: 10s
+    volumes:
+      - logs-data:/opt/adl-suite/logs
+    ports:
+      - "4316:4316"
+
+  reconciler:
+    build:
+      context: .
+      dockerfile: engines/reconciler/Dockerfile
+    container_name: reconciler
+    env_file:
+      - ./data/secrets/runtime.env
+    environment:
+      - PORT=4315
+      - EVENTBUS_URL=http://core-eventbus:4212
+      - MODE=http
+    depends_on:
+      postgres:
+        condition: service_healthy
+      core-eventbus:
+        condition: service_healthy
+    networks:
+      - adl-net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"fetch('http://localhost:4315/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\""]
+      interval: 10s
+    volumes:
+      - logs-data:/opt/adl-suite/logs
+    ports:
+      - "4315:4315"
+
+  auto-trader:
+    build:
+      context: .
+      dockerfile: engines/auto-trader/Dockerfile
+    container_name: auto-trader
+    env_file:
+      - ./data/secrets/runtime.env
+    environment:
+      - PORT=4320
+      - EVENTBUS_URL=http://core-eventbus:4212
+      - AUTO_TRADING_ENABLED=false
+      - AUTO_TRADING_INTERVAL_SECONDS=120
+      - AUTO_TRADING_SYMBOLS=AAPL,SPY,QQQ,BTCUSD
+      - AUTO_MIN_CONFIDENCE=0.75
+      - AUTO_SYMBOL_COOLDOWN_MINUTES=45
+      - AUTO_MAX_RISK_PCT_NAV=0.25
+      - AUTO_MAX_GROSS_EXPOSURE_PCT_NAV=30
+      - AUTO_BROKER_ERROR_LIMIT=3
+      - AUTO_BROKER_ERROR_WINDOW_MINUTES=30
+      - MODE=worker
+    depends_on:
+      core-eventbus:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    networks:
+      - adl-net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"fetch('http://localhost:4320/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\""]
+      interval: 10s
+    volumes:
+      - logs-data:/opt/adl-suite/logs
+    ports:
+      - "4320:4320"
+
+  trading-daily-cron:
+    image: alpine:3.20
+    container_name: trading-daily-cron
+    env_file:
+      - ./data/secrets/runtime.env
+    entrypoint: [\"/bin/sh\",\"-c\"]
+    command:
+      - |\n        apk add --no-cache curl\n        echo \"0 0 * * * curl -s -X POST http://engine-trading:4101/pnl/daily-rollup >/proc/1/fd/1 2>/proc/1/fd/2\" > /etc/crontabs/root\n        crond -f -d 8\n    depends_on:\n      engine-trading:\n        condition: service_healthy\n    networks:\n      - adl-net\n    restart: unless-stopped\n\n  boe-runner:\n    build:\n      context: .\n      dockerfile: Dockerfile.boe-runner\n    container_name: boe-runner\n    env_file:\n      - ./data/secrets/runtime.env\n    environment:\n      - MODE=worker\n      - BOE_RUN_INTERVAL_SECONDS=86400\n      - DATABASE_URL=postgres://adl:${POSTGRES_PASSWORD}@adl-postgres:5432/adl_core\n    depends_on:\n      postgres:\n        condition: service_healthy\n    networks:\n      - adl-net\n    restart: unless-stopped\n    healthcheck:\n      test: [\"CMD-SHELL\", \"node -e \\\"process.exit(0)\\\"\"]\n      interval: 60s\n      timeout: 5s\n      retries: 3\n    mem_limit: 512m\n    cpus: 0.5\n    volumes:\n      - ./data/boe_auth:/opt/adl-suite/data/boe_auth\n      - ./data/boe:/opt/adl-suite/data/boe\n*** End Patch.gunaće##
+
