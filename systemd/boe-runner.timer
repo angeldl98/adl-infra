@@ -1,0 +1,12 @@
+[Unit]
+Description=BOE raw runner schedule (every 15 minutes)
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=15min
+Unit=boe-runner.service
+Persistent=true
+
+[Install]
+WantedBy=timers.target
+

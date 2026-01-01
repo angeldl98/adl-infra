@@ -46,10 +46,15 @@ services:
     env_file:
       - /opt/adl-suite/data/secrets/runtime.env
     environment:
+      PGHOST: adl-postgres
+      POSTGRES_HOST: adl-postgres
+      DATABASE_URL: ""
       DISABLE_PDF_PARSE: "true"
-    restart: unless-stopped
+      DOCKER_ENV: "1"
+    restart: "no"
     volumes:
       - /opt/adl-suite/data/boe_auth:/opt/adl-suite/data/boe_auth:ro
+      - /opt/adl-suite/data/boe_debug:/opt/adl-suite/data/boe_debug
     networks:
       - adl-infra_adl-net
 
@@ -72,7 +77,12 @@ services:
     container_name: pharma-raw-runner
     env_file:
       - /opt/adl-suite/data/secrets/runtime.env
-    restart: unless-stopped
+    environment:
+      PGHOST: adl-postgres
+      POSTGRES_HOST: adl-postgres
+      DATABASE_URL: ""
+      DOCKER_ENV: "1"
+    restart: "no"
     networks:
       - adl-infra_adl-net
 

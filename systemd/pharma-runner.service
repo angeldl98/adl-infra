@@ -1,0 +1,14 @@
+[Unit]
+Description=Pharma raw runner (docker compose one-shot)
+Requires=docker.service
+After=docker.service
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/adl-suite/adl-infra
+ExecStart=/usr/bin/docker compose -f /opt/adl-suite/adl-infra/docker-compose.apps.yml run --rm pharma-raw-runner
+TimeoutStartSec=1800
+
+[Install]
+WantedBy=multi-user.target
+
