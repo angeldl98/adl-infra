@@ -77,7 +77,7 @@ services:
       - /opt/adl-suite/data/secrets/runtime.env
     environment:
       DOCKER_ENV: "1"
-    command: ["bash", "-lc", "while true; do /opt/adl-suite/adl-infra/scripts/boe-runner.sh; sleep 21600; done"]
+    command: ["/opt/adl-suite/adl-infra/scripts/boe-runner.sh"]
     depends_on:
       - postgres
     networks:

@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
-set -euo pipefail
+# We manage errors manually to ensure a single exit point with explicit status.
+set -uo pipefail
+trap 'echo "FATAL: script terminated unexpectedly"; exit 1' TERM INT
 
 LOCK_DIR="/opt/adl-suite/data/locks"
 LOCK_FILE="${LOCK_DIR}/boe-runner.lock"
@@ -63,9 +65,10 @@ run_step() {
   echo "[$(date --iso-8601=seconds)] STEP_START ${name}"
   if (cd "$1" && shift && "$@"); then
     echo "[$(date --iso-8601=seconds)] STEP_OK ${name}"
+    return 0
   else
     echo "[$(date --iso-8601=seconds)] STEP_FAIL ${name}"
-    exit 1
+    return 1
   fi
 }
 
@@ -73,41 +76,65 @@ run_step_with_ci() {
   local name="$1"
   local dir="$2"
   shift 2
-  run_step "${name}:npm-ci" "${dir}" npm ci
-  run_step "${name}:run" "${dir}" "$@"
+  run_step "${name}:npm-ci" "${dir}" npm ci || return 1
+  run_step "${name}:run" "${dir}" "$@" || return 1
 }
 
 raw_count_before=$(psql_q "SELECT COUNT(*) FROM boe_subastas_raw;")
 
 # BOE RAW scraper (headless cron scrape)
-run_step_with_ci "raw_scraper" "/opt/adl-suite/adl-boe-raw-scraper" bash -lc "npx playwright install --with-deps chromium && npm run scrape:cron"
+rc=0
+run_step_with_ci "raw_scraper" "/opt/adl-suite/adl-boe-raw-scraper" bash -lc "npx playwright install --with-deps chromium && npm run scrape:cron" || rc=$?
 
 raw_count_after=$(psql_q "SELECT COUNT(*) FROM boe_subastas_raw;")
-if [ "${raw_count_after:-0}" -le "${raw_count_before:-0}" ]; then
-  log_fail "raw produced no new rows raw_before=${raw_count_before} raw_after=${raw_count_after}"
+raw_delta=$(( raw_count_after - raw_count_before ))
+if [ "${raw_delta}" -lt 0 ]; then
+  log_fail "raw decreased rows raw_before=${raw_count_before} raw_after=${raw_count_after}"
+fi
+if [ "${raw_delta}" -eq 0 ]; then
+  echo "[$(date --iso-8601=seconds)] NOOP raw produced no new rows raw_before=${raw_count_before} raw_after=${raw_count_after}"
+fi
+if [ "${rc:-0}" -ne 0 ]; then
+  log_fail "raw step failed"
 fi
 
 norm_count_before=$(psql_q "SELECT COUNT(*) FROM boe_subastas;")
 
 # BOE normalizer (build + run)
-run_step_with_ci "normalizer" "/opt/adl-suite/adl-boe-normalizer" bash -lc "npm run build && npm start"
+rc=0
+run_step_with_ci "normalizer" "/opt/adl-suite/adl-boe-normalizer" bash -lc "npm run build && node dist/main.js" || rc=$?
 
 norm_count_after=$(psql_q "SELECT COUNT(*) FROM boe_subastas;")
-if [ "${norm_count_after:-0}" -le "${norm_count_before:-0}" ]; then
-  log_fail "normalizer produced no rows norm_before=${norm_count_before} norm_after=${norm_count_after}"
+norm_delta=$(( norm_count_after - norm_count_before ))
+if [ "${norm_delta}" -lt 0 ]; then
+  log_fail "normalizer decreased rows norm_before=${norm_count_before} norm_after=${norm_count_after}"
+fi
+if [ "${norm_delta}" -eq 0 ]; then
+  echo "[$(date --iso-8601=seconds)] NOOP normalizer produced no new rows norm_before=${norm_count_before} norm_after=${norm_count_after}"
+fi
+if [ "${rc:-0}" -ne 0 ]; then
+  log_fail "normalizer step failed"
 fi
 
 prod_count_before=$(psql_q "SELECT COUNT(*) FROM boe_prod.subastas_pro;")
 sum_count_before=$(psql_q "SELECT COUNT(*) FROM boe_prod.subastas_summary;")
 
 # BOE analyst publish (build + run plugin=boe)
-run_step_with_ci "analyst_boe" "/opt/adl-suite/adl-data-analyst" bash -lc "npm run build && node dist/src/index.js --plugin=boe"
+rc=0
+run_step_with_ci "analyst_boe" "/opt/adl-suite/adl-data-analyst" bash -lc "npm run build && node dist/src/index.js --plugin=boe" || rc=$?
 
 prod_count_after=$(psql_q "SELECT COUNT(*) FROM boe_prod.subastas_pro;")
 sum_count_after=$(psql_q "SELECT COUNT(*) FROM boe_prod.subastas_summary;")
 
-if [ "${prod_count_after:-0}" -le "${prod_count_before:-0}" ]; then
-  log_fail "analyst produced zero prod rows prod_before=${prod_count_before} prod_after=${prod_count_after} summary_after=${sum_count_after}"
+prod_delta=$(( prod_count_after - prod_count_before ))
+if [ "${prod_delta}" -lt 0 ]; then
+  log_fail "analyst reduced prod rows prod_before=${prod_count_before} prod_after=${prod_count_after} summary_after=${sum_count_after}"
+fi
+if [ "${prod_delta}" -eq 0 ]; then
+  echo "[$(date --iso-8601=seconds)] NOOP analyst produced no new prod rows prod_before=${prod_count_before} prod_after=${prod_count_after} summary_after=${sum_count_after}"
+fi
+if [ "${rc:-0}" -ne 0 ]; then
+  log_fail "analyst step failed"
 fi
 
 echo "[$(date --iso-8601=seconds)] METRICS raw_before=${raw_count_before} raw_after=${raw_count_after} norm_before=${norm_count_before} norm_after=${norm_count_after} prod_before=${prod_count_before} prod_after=${prod_count_after} summary_before=${sum_count_before} summary_after=${sum_count_after}"
@@ -116,5 +143,13 @@ echo "[$(date --iso-8601=seconds)] METRICS raw_before=${raw_count_before} raw_af
   exit 1
 }
 
-echo "[$(date --iso-8601=seconds)] RUN_OK boe-runner"
+if [ "${raw_delta}" -eq 0 ] && [ "${norm_delta}" -eq 0 ] && [ "${prod_delta}" -eq 0 ]; then
+  echo "[$(date --iso-8601=seconds)] BOE RUN RESULT: SUCCESS_NO_CHANGES"
+  echo "norm_before=${norm_count_before} norm_after=${norm_count_after}"
+  exit 0
+fi
+
+echo "[$(date --iso-8601=seconds)] BOE RUN RESULT: SUCCESS_WITH_ROWS"
+echo "norm_before=${norm_count_before} norm_after=${norm_count_after}"
+exit 0
 
