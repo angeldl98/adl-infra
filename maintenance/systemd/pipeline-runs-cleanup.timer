@@ -1,0 +1,14 @@
+[Unit]
+Description=Daily Pipeline Runs Retention Cleanup
+Documentation=file:///opt/adl-suite/adl-infra/maintenance/README.md
+
+[Timer]
+# Run daily at 3:00 AM with random delay up to 10 minutes
+OnCalendar=daily
+OnCalendar=*-*-* 03:00:00
+Persistent=true
+RandomizedDelaySec=600
+
+[Install]
+WantedBy=timers.target
+
