@@ -2,11 +2,6 @@
 # This file is only started when repos are present and clean.
 name: adl-infra-apps
 
-networks:
-  adl-net:
-    external: true
-    name: adl-infra_adl-net
-
 volumes:
   logs-data:
     external: true
@@ -19,6 +14,21 @@ volumes:
     name: adl-infra_secrets-data
 
 services:
-  # All application services disabled: missing repo/path on VPS (mirror-first)
-  {} 
+  adl-web:
+    build:
+      context: ../adl-web
+    container_name: adl-web
+    env_file:
+      - /opt/adl-suite/data/secrets/runtime.env
+    environment:
+      NODE_ENV: production
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
+    networks:
+      - adl-infra_adl-net
+
+networks:
+  adl-infra_adl-net:
+    external: true
 
