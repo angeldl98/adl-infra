@@ -1,0 +1,12 @@
+[Unit]
+Description=Pharma raw runner schedule (every 5 minutes)
+
+[Timer]
+OnBootSec=1min
+OnUnitActiveSec=5min
+Unit=pharma-runner.service
+Persistent=true
+
+[Install]
+WantedBy=timers.target
+
