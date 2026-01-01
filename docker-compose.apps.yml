@@ -1,0 +1,24 @@
+# APPLICATION STACK
+# This file is only started when repos are present and clean.
+name: adl-infra-apps
+
+networks:
+  adl-net:
+    external: true
+    name: adl-infra_adl-net
+
+volumes:
+  logs-data:
+    external: true
+    name: adl-infra_logs-data
+  pgdata:
+    external: true
+    name: adl-infra_pgdata
+  secrets-data:
+    external: true
+    name: adl-infra_secrets-data
+
+services:
+  # All application services disabled: missing repo/path on VPS (mirror-first)
+  {} 
+
